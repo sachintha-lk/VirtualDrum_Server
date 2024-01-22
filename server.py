@@ -40,10 +40,16 @@ def handle_client_1(client_socket):
         # Parse the received command
         try:
             commands = data.strip().split(';')
+            print(commands)
+
             for command in commands:
                 msg = command.split(':')
+                # the drum msg should be sent as -   send.drum1:10
                 print(msg)
                 key, value = (msg[0],msg[1])
+                # key = (msg[0])
+
+                
                 if key in drum_sounds:
                     volume = float(value)
                     if volume < 0:

@@ -1,6 +1,8 @@
 import serial
-import threading
+from threading import Thread
 import pygame
+import asyncio
+
 
 # Define the serial port settings
 SERIAL_PORT = 'COM4'  # Change this to the appropriate serial port on your system
@@ -27,29 +29,40 @@ drum_sounds = {
 
 # Function to handle commands from the serial port
 def handle_serial_commands(ser):
+    incomeDataMoniter = Thread(target=MoniterPiezoSerialData,name="IncomeDataMoniter",args=(ser,))
+    incomeDataMoniter.start()
+
+
+def MoniterPiezoSerialData(ser):
     while True:
         data = ser.readline().decode('utf-8').strip()
         if not data or len(data) < 5:
             break  # No more data, break the loop
+        # t = Thread(target=playDrumSound,args=(data,))
+        # t.start()
+        #fix
+        playDrumSound(data)
+        print(data)
 
-        try:
-            commands = data.split(';')
-            print(commands)
+def playDrumSound(data):
+    try:
+        commands = data.split(';')
+        # print(commands)
 
-            for command in commands:
-                msg = command.split(':')
-                key, value = msg[0], msg[1]
+        for command in commands:
+            msg = command.split(':')
+            key, value = msg[0], msg[1]
 
-                if key in drum_sounds:
-                    volume = float(value)
-                    if volume < 0:
-                        volume = 0
-                    elif volume > 0:
-                        volume = 1
-                        pygame.mixer.Sound(drum_sounds[key]).set_volume(volume)
-                        pygame.mixer.Sound(drum_sounds[key]).play()
-        except Exception as e:
-            print(f"Error processing command: {e}")
+            if key in drum_sounds:
+                volume = float(value)
+                if volume < 0:
+                    volume = 0
+                elif volume > 0:
+                    volume = 1
+                    pygame.mixer.Sound(drum_sounds[key]).set_volume(volume)
+                    pygame.mixer.Sound(drum_sounds[key]).play()
+    except Exception as e:
+        print(f"Error processing command: {e}")
 
 # Open the serial port
 ser = serial.Serial(SERIAL_PORT, SERIAL_BAUDRATE)
@@ -58,3 +71,9 @@ print(f"[*] Listening on {SERIAL_PORT} at {SERIAL_BAUDRATE} baudrate")
 
 # Start handling commands from the serial port
 handle_serial_commands(ser)
+while True:
+    uin = input("type 'exit' to end the program\n")
+    if uin=='exit':
+        ser.close()
+        print("serial port closed")
+        exit()

@@ -18,7 +18,7 @@ def send(msg):
 
 while valid:
 
-    send_message = input("Enter the message that you want to send.")
+    send_message = input("Enter the command: ")
     send(send_message)
     if send_message == DISCONNECT_MESSAGE:
         valid = False

@@ -2,6 +2,8 @@ import serial
 import time
 import sys
 
+TARGET_DRUM = ', 0'
+
 serial_port = 'COM3'
 baud_rate = 38400
 
@@ -16,8 +18,11 @@ try:
     recodeCollecter = ''
     while True:
         # Read data from the serial port
-        data = ser.readline().decode('utf-8')
-
+        try:
+            data = ser.readline().decode('utf-8')
+        except:
+            print("decode Error")
+            continue;
         # If data received, print it
         if data:
             c = data[0]
@@ -28,12 +33,14 @@ try:
                     y = float(y.split(':')[1])
                     z = float(z.split(':')[1])
                     if rec:
-                        recode = "\nx: %+011.6f , y: %+011.6f , z: %+011.6f" % (x,y,z)
-                        sys.stdout.write(recode)
+                        # recode = "\n%.6f , %.6f , %.6f" % (x,y,z) 
+                        recode = "%d , %d , %d " % (x,y,z)
+                        sys.stdout.write(recode+"\n")
                         sys.stdout.flush()
                         recodeCollecter += recode
                     else:
-                        sys.stdout.write("\rx: %+011.6f\ty: %+011.6f\tz: %+011.6f" % (x,y,z))
+                        # sys.stdout.write("\rx: %+011.6f\ty: %+011.6f\tz: %+011.6f" % (x,y,z))
+                        sys.stdout.write("\rx: %5d\ty: %5d\tz: %5d" % (x,y,z))
                         sys.stdout.flush()
                 except:
                     pass
@@ -44,26 +51,21 @@ try:
                         x = int(x.split(':')[1])
                         y = int(y.split(':')[1])
                         z = int(z.split(':')[1])
-                        recode = ", ax: %d , ay: %d , az: %d" % (x,y,z)
+                        recode = ", %d , %d , %d , " % (x,y,z)
                         # sys.stdout.write(recode)
                         # sys.stdout.flush()
                         recodeCollecter += recode
-                        
-                except:
-                    pass
-            if data[:5] == 'Index':
-                try:
-                    if rec:
-                        ind = int(data.split(':')[1])
-                        recodeCollecter += ', index: '+str(ind)
                         recodsCount +=1
-                        if recodsCount==100:
+                        if recodsCount==39:
+                            recode += recode[:-2]+'\n'
                             f = open('recodes.csv','a')
                             f.write(recodeCollecter+'\n\n')
                             rec = False
+                        
                 except:
                     pass
-            if data[:3] == 'rec':
+
+            if data[:3] == 'rec' and rec == False:
                 print("\nrecoding...")
                 rec = True
                 recodsCount = 0

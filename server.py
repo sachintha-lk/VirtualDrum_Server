@@ -25,6 +25,7 @@ drum_sounds = {
     'drum9': 'drum9.wav',
     'drum10': 'drum10.wav',
     'drum11': 'drum11.wav',
+    'drum12': 'drum10.mp3',
 
 
     # Add more drum sounds as needed
@@ -51,12 +52,12 @@ def handle_client_1(client_socket):
 
                 
                 if key in drum_sounds:
-                    volume = float(value)
-                    if volume < 0:
-                        volume = 0
-                    elif volume > 1:
-                        volume = 1
-                    pygame.mixer.Sound(drum_sounds[key]).set_volume(volume)
+                    volume = int(value)
+                    # if volume < 0:
+                    #     volume = 0
+                    # elif volume > 1:
+                    #     volume = 1
+                    pygame.mixer.Sound(drum_sounds[key]).set_volume(volume/100)
                     pygame.mixer.Sound(drum_sounds[key]).play()
         except Exception as e:
              print(f"Error processing command: {e}")

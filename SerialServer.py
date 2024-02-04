@@ -60,14 +60,10 @@ def playDrumSound(data):
 
             if key in drum_sounds:
                 volume = float(value)/1023
-                channel = pygame.mixer.find_channel()
-                if(channel==None):
-                    print("Warnning: All the channels are busy")
-                    pygame.mixer.Channel(0).set_volume(volume) 
-                    pygame.mixer.Channel(0).play(loadedSounds[key])
-                else:
-                    channel.set_volume(volume)
-                    channel.play(loadedSounds[key])
+                # find a free channel
+                channel = pygame.mixer.find_channel(True)
+                channel.set_volume(volume)
+                channel.play(loadedSounds[key])
     except Exception as e:
         print(f"Error processing command: {e}")
 

@@ -7,6 +7,7 @@ import asyncio
 # Define the serial port settings
 SERIAL_PORT = 'COM4'  # Change this to the appropriate serial port on your system
 SERIAL_BAUDRATE = 9600
+CHANNELS = 32
 
 
 # Define audio tracks for different drum values
@@ -26,7 +27,7 @@ drum_sounds = {
 loadedSounds=dict()
  # Initialize Pygame mixer for audio playback
 pygame.mixer.init()
-pygame.mixer.set_num_channels(20)
+pygame.mixer.set_num_channels(CHANNELS)
 for key in drum_sounds:
     print('loading',key)
     loadedSounds[key] = pygame.mixer.Sound(drum_sounds[key])
@@ -59,10 +60,14 @@ def playDrumSound(data):
 
             if key in drum_sounds:
                 volume = float(value)/1023
-                loadedSounds[key].set_volume(volume)
-                loadedSounds[key].play()
-                while pygame.mixer.Channel(0).get_busy():
-                    pass
+                channel = pygame.mixer.find_channel()
+                if(channel==None):
+                    print("Warnning: All the channels are busy")
+                    pygame.mixer.Channel(0).set_volume(volume) 
+                    pygame.mixer.Channel(0).play(loadedSounds[key])
+                else:
+                    channel.set_volume(volume)
+                    channel.play(loadedSounds[key])
     except Exception as e:
         print(f"Error processing command: {e}")
 

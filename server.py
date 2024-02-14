@@ -10,7 +10,7 @@ PORT = 7070
 ALLOWED_IP = '127.0.0.1'
 
 # Initialize Pygame mixer for audio playback
-pygame.mixer.init()
+pygame.mixer.init(channels=2)
 
 # Define audio tracks for different drum values
 drum_sounds = {
@@ -52,13 +52,18 @@ def handle_client_1(client_socket):
 
                 
                 if key in drum_sounds:
-                    volume = int(value)
+                    volume = float(value)
                     # if volume < 0:
                     #     volume = 0
                     # elif volume > 1:
                     #     volume = 1
-                    pygame.mixer.Sound(drum_sounds[key]).set_volume(volume/100)
-                    pygame.mixer.Sound(drum_sounds[key]).play()
+                    # pygame.mixer.Sound(drum_sounds[key]).set_volume(volume)
+                    # pygame.mixer.Sound(drum_sounds[key]).play()
+                    pygame.mixer.music.load(drum_sounds[key])
+                    pygame.mixer.music.set_volume(volume)
+                    pygame.mixer.music.play()
+                    while pygame.mixer.music.get_busy():
+                        pass
         except Exception as e:
              print(f"Error processing command: {e}")
 

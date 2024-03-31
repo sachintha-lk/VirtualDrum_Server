@@ -1,6 +1,8 @@
 import socket
 import threading
 import pygame
+import eel
+import errno 
 
 # Define the server host and port
 HOST = '0.0.0.0'
@@ -31,6 +33,13 @@ loadedSounds=dict()
  # Initialize Pygame mixer for audio playback
 pygame.mixer.init()
 pygame.mixer.set_num_channels(CHANNELS)
+# Initialize Eel
+eel.init('web')
+
+# Global variable to track the server status
+server_running = False
+server_thread = None
+
 for key in drum_sounds:
     print('loading',key)
     loadedSounds[key] = pygame.mixer.Sound(drum_sounds[key])
@@ -80,21 +89,59 @@ def handle_connection(client_socket, addr):
     else:
         print(f"[*] Connection from {addr[0]} denied.")
 
-# Create the server socket
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# Function to run the server loop
+def server_loop(server):
+    while server_running:
+        try:
+            client_socket, addr = server.accept()  # Accept a client connection
+            print(f"[*] Accepted connection from {addr[0]}:{addr[1]}")
+            eel.updateMessage(f"Accepted client connection from {addr[0]}:{addr[1]}")
+            
+            
+            client_handler = threading.Thread(target=handle_connection, args=(client_socket, addr))
+            client_handler.start()  # Start a new thread to handle the client
+        except OSError as e:
+                    if e.errno == errno.ENOTSOCK:
+                        # print("Socket operation error as the server is stopped.")
+                        continue
+@eel.expose
+def start_server(ip, port, allowed_ip):
+    global server_running, server, server_thread
 
-# Bind the server to the host and port
-server.bind((HOST, PORT))
+    if not server_running:
+        ALLOWED_IP = allowed_ip
+        # Create the server socket
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-# Start listening for incoming connections
-server.listen(5)
-
-print(f"[*] Listening on {HOST}:{PORT}")
-
-while True:
-    client_socket, addr = server.accept()  # Accept a client connection
-    print(f"[*] Accepted connection from {addr[0]}:{addr[1]}")
-    client_handler = threading.Thread(target=handle_connection, args=(client_socket, addr))
-    client_handler.start()  # Start a new thread to handle the client
+        # Bind the server to the host and port
+        server.bind((ip, port))
 
 
+        # Start listening for incoming connections
+        server.listen(5)
+
+        print(f"[*] Listening on {ip}:{port}")
+        eel.updateMessage(f"Server Listening on {ip}:{port}.")
+        eel.updateServerRunningStatus(True)
+
+        server_running = True
+
+        # Start server in a new thread
+        server_thread = threading.Thread(target=server_loop, args=(server,))
+        server_thread.start()
+
+@eel.expose
+def stop_server():
+    global server_running, server
+
+    if server_running:
+        server_running = False
+        server.close()
+        eel.updateMessage("Server stopped.")
+        eel.updateServerRunningStatus(False)
+
+        print("[*] Server stopped.")
+
+
+# Start the Eel application
+eel.start('index.html', size=(600, 500))

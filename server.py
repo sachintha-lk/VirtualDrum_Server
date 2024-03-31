@@ -3,15 +3,17 @@ import threading
 import pygame
 
 # Define the server host and port
-HOST = '127.0.0.1'
-PORT = 7070
+HOST = '0.0.0.0'
+PORT = 7075
+CHANNELS = 32
 
 # Define the allowed IP address
-ALLOWED_IP = '127.0.0.1'
+ALLOWED_IP = '192.168.236.105'
 
 # Initialize Pygame mixer for audio playback
 pygame.mixer.init(channels=2)
 
+# Define audio tracks for different drum values
 # Define audio tracks for different drum values
 drum_sounds = {
     'drum1': 'drum1.wav',
@@ -23,12 +25,36 @@ drum_sounds = {
     'drum7': 'drum7.wav',
     'drum8': 'drum8.wav',
     'drum9': 'drum9.wav',
-    'drum10': 'drum10.wav',
-    'drum11': 'drum11.wav',
-
-
     # Add more drum sounds as needed
 }
+loadedSounds=dict()
+ # Initialize Pygame mixer for audio playback
+pygame.mixer.init()
+pygame.mixer.set_num_channels(CHANNELS)
+for key in drum_sounds:
+    print('loading',key)
+    loadedSounds[key] = pygame.mixer.Sound(drum_sounds[key])
+
+
+
+
+def playDrumSound(data):
+    try:
+        commands = data.split(';')
+        print(commands)
+
+        for command in commands:
+            msg = command.split(':')
+            key, value = msg[0], msg[1]
+
+            if key in drum_sounds:
+                volume = float(value)/1023
+                # find a free channel
+                channel = pygame.mixer.find_channel(True)
+                channel.set_volume(volume)
+                channel.play(loadedSounds[key])
+    except Exception as e:
+        print(f"Error processing command: {e}")
 
 # Function to handle commands from the first IP
 def handle_client_1(client_socket):
@@ -36,41 +62,20 @@ def handle_client_1(client_socket):
         data = client_socket.recv(1024).decode('utf-8')  # Receive and decode data
         if not data or len(data)<5:
             break  # No more data, break the loop
+
+        print(data)
+        #trim the data
+        data = data.strip()
         
         # Parse the received command
-        try:
-            commands = data.strip().split(';')
-            print(commands)
-
-            for command in commands:
-                msg = command.split(':')
-                # the drum msg should be sent as -   send.drum1:10
-                print(msg)
-                key, value = (msg[0],msg[1])
-                # key = (msg[0])
-
-                
-                if key in drum_sounds:
-                    volume = float(value)
-                    # if volume < 0:
-                    #     volume = 0
-                    # elif volume > 1:
-                    #     volume = 1
-                    # pygame.mixer.Sound(drum_sounds[key]).set_volume(volume)
-                    # pygame.mixer.Sound(drum_sounds[key]).play()
-                    pygame.mixer.music.load(drum_sounds[key])
-                    pygame.mixer.music.set_volume(volume)
-                    pygame.mixer.music.play()
-                    while pygame.mixer.music.get_busy():
-                        pass
-        except Exception as e:
-             print(f"Error processing command: {e}")
+        playDrumSound(data)
 
     client_socket.close()  # Close the client socket
 
 # Function to handle incoming connections
 def handle_connection(client_socket, addr):
-    if addr[0] == ALLOWED_IP:
+    # if addr[0] == ALLOWED_IP:
+    if True:
         handle_client_1(client_socket)
     else:
         print(f"[*] Connection from {addr[0]} denied.")

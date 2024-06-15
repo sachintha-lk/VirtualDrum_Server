@@ -11,24 +11,26 @@
     <div class="container mx-auto p-4">
         <h1 class="text-3xl font-semibold text-center mb-4">Drum Server Config</h1>
         <div class="px-8 pt-6 pb-8 mb-4">
-
-            <div class="mb-4">
-                <label for="ip" class="block text-gray-700 text-sm font-bold mb-2">Server IP:</label>
-                <input type="text" id="ip" value="127.0.0.1" class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <div>
+                <div class="block text-gray-700 text-sm font-bold mb-2">
+                    <span class="text-gray-800"> Server IP:
+                        <span id="ip" class="text-gray-800"></span> 
+                    </span>
+                </div>                
             </div>
+
             <div class="mb-6">
                 <label for="port" class="block text-gray-700 text-sm font-bold mb-2">Server Port:</label>
                 <input type="number" id="port" value="7075" class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
             </div>
-            <div class="mb-6">
-                <label for="allowed-ip" class="block text-gray-700 text-sm font-bold mb-2">Allowed Ip:</label>
-                <input type="text" id="allowed-ip" value="192.168.236.105" class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-            </div>
+
             <div class="flex items-center justify-between">
                 <button onclick="startServer()" id="startBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Start Server</button>
                 <button onclick="stopServer()" id="stopBtn" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hidden">Stop Server</button>
             </div>
             <div id="status" class="text-md font-semibold text-gray-800"></div>
+
+            <div id="instrument" class="text-md font-semibold text-gray-800"></div>
 
         </div>
     </div>
@@ -38,10 +40,10 @@
         let serverStatus = false;
 
         function startServer() {
-            let ip = document.getElementById("ip").value;
+            // let ip = document.getElementById("ip").value;
             let port = parseInt(document.getElementById("port").value);
-            let allowed_ip = document.getElementById("allowed-ip").value;
-            eel.start_server(ip, port, allowed_ip);
+            // let allowed_ip = document.getElementById("allowed-ip").value;
+            eel.start_server(port);
         }
 
         function stopServer() {
@@ -51,6 +53,21 @@
         eel.expose(updateMessage)
         function updateMessage(message) {
             document.getElementById("status").innerText = message;
+        }
+
+        eel.expose(updateServerIP) 
+        function updateServerIP(ip) {
+            document.getElementById("ip").innerText = ip;
+        }
+
+        eel.expose(notifyInstrumentPlayed)
+        function notifyInstrumentPlayed(instrument) {
+            // temporary show and disappear to show the instrument played
+            document.getElementById("instrument").innerText = instrument;
+            setTimeout(() => {
+                document.getElementById("instrument").innerText = "";
+            }, 500);
+
         }
 
         eel.expose(updateServerRunningStatus)

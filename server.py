@@ -116,13 +116,12 @@ def server_loop(server):
                         # print("Socket operation error as the server is stopped.")
                         continue
 @eel.expose
-def start_server(port):
+def start_server_eel_command(port):
     global server_running, server, server_thread
 
     if not server_running:
         # Create the server socket
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
         # get the local ip of the server
         CURRENT_SERVER_LOCAL_IP = get_local_ip()
         # Bind the server to the host and port
@@ -143,7 +142,7 @@ def start_server(port):
         server_thread.start()
 
 @eel.expose
-def stop_server():
+def stop_server_eel_command():
     global server_running, server
 
     if server_running:
@@ -156,7 +155,7 @@ def stop_server():
 
 # when the eel application is closed
 def on_close_callback(page, sockets):
-    stop_server()
+    stop_server_eel_command()
     exit(0)
 
 

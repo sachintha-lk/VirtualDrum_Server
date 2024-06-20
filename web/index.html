@@ -43,11 +43,11 @@
             // let ip = document.getElementById("ip").value;
             let port = parseInt(document.getElementById("port").value);
             // let allowed_ip = document.getElementById("allowed-ip").value;
-            eel.start_server(port);
+            eel.start_server_eel_command(port);
         }
 
         function stopServer() {
-            eel.stop_server();
+            eel.stop_server_eel_command();
         }
 
         eel.expose(updateMessage)

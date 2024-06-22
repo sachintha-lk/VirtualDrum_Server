@@ -4,28 +4,30 @@ import threading
 import pygame
 import eel
 import websockets
-import errno
+import sys
+import traceback
+from queue import Queue
 
 def get_local_ip():
-    # just to get the local ip address with UDP socket
     temp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
-        temp_socket.connect(("8.8.8.8", 80)) # only to get the local ip address 
+        temp_socket.connect(("8.8.8.8", 80))
         local_ip = temp_socket.getsockname()[0]
     finally:
         temp_socket.close()
     return local_ip
 
-# Define the server host and port
 HOST = '0.0.0.0'
 CURRENT_SERVER_LOCAL_IP = get_local_ip()
 PORT = 7075
 CHANNELS = 32
 
-# Initialize Pygame mixer for audio playback
-pygame.mixer.init(channels=2)
+try:
+    pygame.mixer.init(channels=2)
+except pygame.error as e:
+    print(f"Failed to initialize pygame mixer: {e}")
+    sys.exit(1)
 
-# Define audio tracks for different drum values
 drum_sounds = {
     'drum1': 'drum1.wav',
     'drum2': 'drum2.wav',
@@ -39,20 +41,27 @@ drum_sounds = {
 }
 
 loadedSounds = {}
-# Initialize Pygame mixer for audio playback
-pygame.mixer.init()
 pygame.mixer.set_num_channels(CHANNELS)
 
-# Initialize Eel
-eel.init('web')
+try:
+    eel.init('web')
+except Exception as e:
+    print(f"Failed to initialize Eel: {e}")
+    sys.exit(1)
+
 eel.updateServerIP(CURRENT_SERVER_LOCAL_IP)
-# Global variable to track the server status
+
 server_running = False
 server = None
+stop_event = threading.Event()
+command_queue = Queue()
 
-for key in drum_sounds:
-    print('loading', key)
-    loadedSounds[key] = pygame.mixer.Sound(drum_sounds[key])
+for key, sound_file in drum_sounds.items():
+    try:
+        print(f'Loading {key}')
+        loadedSounds[key] = pygame.mixer.Sound(sound_file)
+    except pygame.error as e:
+        print(f"Failed to load sound {sound_file}: {e}")
 
 def playDrumSound(data):
     try:
@@ -63,13 +72,15 @@ def playDrumSound(data):
             msg = command.split(':')
             key, value = msg[0], msg[1]
 
-            if key in drum_sounds:
+            if key in loadedSounds:
                 volume = float(value) / 1023
-                # find a free channel
                 channel = pygame.mixer.find_channel(True)
-                channel.set_volume(volume)
-                channel.play(loadedSounds[key])
-                eel.notifyInstrumentPlayed(key)  
+                if channel:
+                    channel.set_volume(volume)
+                    channel.play(loadedSounds[key])
+                    eel.notifyInstrumentPlayed(key)
+                else:
+                    print("No free channel available")
     except Exception as e:
         print(f"Error processing command: {e}")
 
@@ -79,67 +90,95 @@ async def handle_client(websocket, path):
         try:
             message = await websocket.recv()
             print(f"Received message from client: {message}")
-            # Play a sound when a message is received in a separate thread
             if message.startswith('play'):
                 message = message.replace('play:', '')
                 threading.Thread(target=playDrumSound, args=(message,)).start()
-
-            # elif message == 'BatL':
-            #     # save the bat level
-            #     pass
-        
-
-            # elif message == 'reqBatL':
-            #     # Send the battery level to the client
-            #     battery_level = 100
-            #     await websocket.send(f"batteryLevel:{battery_level}")
-
         except websockets.exceptions.ConnectionClosedError:
             print(f"Client {websocket.remote_address} disconnected.")
             break
+        except Exception as e:
+            print(f"Error handling client: {e}")
 
-    
+async def start_server_async(port):
+    global server, server_running
+    try:
+        server = await websockets.serve(handle_client, HOST, port)
+        server_running = True
+        print(f"Server started on port {port}, waiting for connections...")
+        CURRENT_SERVER_LOCAL_IP = get_local_ip()
+        eel.updateMessage(f"Server Listening on {CURRENT_SERVER_LOCAL_IP}:{port}")
+        eel.updateServerIP(CURRENT_SERVER_LOCAL_IP)
+        eel.updateServerRunningStatus(True)
+        
+        while server_running:
+            try:
+                command = command_queue.get(timeout=1)
+                if command == "stop":
+                    await stop_server_async()
+            except asyncio.QueueEmpty:
+                pass
 
-async def start_server(port):
-    global server
-    server = await websockets.serve(handle_client, HOST, port)
-    print(f"Server started on port {port}, waiting for connections...")
-    CURRENT_SERVER_LOCAL_IP = get_local_ip()
-    eel.updateMessage(f"Server Listening on {CURRENT_SERVER_LOCAL_IP}:{port}")
-    eel.updateServerIP(CURRENT_SERVER_LOCAL_IP)
-    eel.updateServerRunningStatus(True)
-    await server.wait_closed()
+        await server.wait_closed()
+    except Exception as e:
+        print(f"Error in server: {e}")
+    finally:
+        server_running = False
+        eel.updateServerRunningStatus(False)
+
+def start_server_thread(port):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(start_server_async(port))
 
 @eel.expose
 def start_server_eel_command(port):
     global server_running
     if not server_running:
-        server_running = True
-        asyncio.run(start_server(port))
+        threading.Thread(target=start_server_thread, args=(port,)).start()
+
+async def stop_server_async():
+    global server_running, server
+    try:
+        if server_running:
+            server.close()
+            await server.wait_closed()
+            server_running = False
+            eel.updateMessage("Server stopped.")
+            eel.updateServerRunningStatus(False)
+            print("[*] Server stopped.")
+    except Exception as e:
+        print(f"Error stopping server: {e}")
+    finally:
+        stop_event.set()
 
 @eel.expose
 def stop_server_eel_command():
-    asyncio.run(stop_server())
-
-async def stop_server():
-    global server_running, server
+    global server_running
     if server_running:
-        server.close()
-        await server.wait_closed()
-        server_running = False
-        eel.updateMessage("Server stopped.")
-        eel.updateServerRunningStatus(False)
-        print("[*] Server stopped.")
+        command_queue.put("stop")
+        if stop_event.wait(timeout=5):  # 5 second timeout
+            print("Server stopped successfully")
+        else:
+            print("Failed to stop server within timeout period")
+    else:
+        print("Server is not running")
 
-# when the eel application is closed
 def on_close_callback(page, sockets):
-    stop_server()
-    exit(0)
+    stop_server_eel_command()
+    sys.exit(0)
 
 def main():
     try:
-        eel.start('index.html', size=(800, 600), close_callback=on_close_callback)  # Start the eel front-end
+        eel.start('index.html', size=(800, 600), close_callback=on_close_callback, block=False)
+        while True:
+            eel.sleep(1.0)
     except (SystemExit, MemoryError, KeyboardInterrupt):
+        print("Closing application...")
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        traceback.print_exc()
+    finally:
+        stop_server_eel_command()
         pygame.quit()
         print("Application closed.")
 

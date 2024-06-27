@@ -24,15 +24,16 @@ class WebSocketServer(threading.Thread):
         self.connected_clients.add(websocket)
 
         print(f"Client connected")
-        if self.on_connect_callback:
-            await self.on_connect_callback(websocket)
+                   
         try:
             async for message in websocket:
                 print(f"Received: {message} from client")
                 if self.on_message_callback:
                     await self.on_message_callback(websocket, message)
+
         except websockets.ConnectionClosedError:
             print(f"Connection closed error")
+            
         except Exception as e:
             print(f"Error: {e}")
         finally:
@@ -44,6 +45,7 @@ class WebSocketServer(threading.Thread):
     async def start_server(self):
         self.server = await websockets.serve(self.handler, "0.0.0.0", self.port)
         print(f"WebSocket server started on port {self.port}")
+
         self.running = True
         while self.running:
             await asyncio.sleep(1)

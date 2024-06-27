@@ -34,7 +34,7 @@ class UDPServer(threading.Thread):
                     message = data.decode('utf-8').strip()
                     print(f"Received: {message} from {addr}")
                     if self.on_message_callback:
-                        await self.on_message_callback(message)
+                        await self.on_message_callback(message, addr)
             except Exception as e:
                 print(f"Error in UDP handler: {e}")
             await asyncio.sleep(0.01)  # Small delay to prevent tight loop
@@ -44,6 +44,10 @@ class UDPServer(threading.Thread):
             return self.server.recvfrom(1024)
         except BlockingIOError:
             return None, None
+        
+    # Never tested this function TODO check if this can work
+    def send_message(self, message, addr):
+        self.loop.run_in_executor(None, self.server.sendto, message, addr)
 
     async def start_server(self):
         self.running = True

@@ -6,44 +6,120 @@
     <title>Drum Player Configuration</title>
     <link href="dist/output.css" rel="stylesheet">
     <script src="/eel.js"></script>
+    <style>
+        .drum {
+            width: 50px;
+            height: 50px;
+            background-color: #d1d5db;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 10px;
+        }
+
+        .playing {
+            animation: playingAnimation 0.2s;
+        }
+
+        .connected {
+            color: #1e954a;            
+        }
+
+        .disconnected {
+            color: #cb0022;
+        }
+
+        @keyframes playingAnimation {
+            0% { background-color: #4ade80; }
+            100% { background-color: #d1d5db; }
+        }
+    </style>
 </head>
 <body class="bg-gray-100">
     <div class="container mx-auto p-4">
         <h1 class="text-3xl font-semibold text-center mb-4">Drum Server Config</h1>
-        <div class="px-8 pt-6 pb-8 mb-4">
-            <div>
-                <div class="block text-gray-700 text-sm font-bold mb-2">
-                    <span class="text-gray-800"> Server IP:
-                        <span id="ip" class="text-gray-800"></span> 
-                    </span>
-                </div>                
+        <div class="px-8 pt-6 pb-8 mb-4 bg-white rounded-lg shadow-md">
+            <div class="block text-gray-700 text-sm font-bold mb-2">
+                <span class="text-gray-800"> Server IP: <span id="ip" class="text-gray-800"></span> </span>
             </div>
 
             <div class="mb-6">
                 <label for="port" class="block text-gray-700 text-sm font-bold mb-2">Server Port:</label>
                 <input type="number" id="port" value="7075" class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
             </div>
-            <div class="flex gap-2">
-                <div>
-                    <select name="server-type" id="server-type">
-                        <option value="UDP">UDP</option>
-                        <option value="WebSocket">WebSocket</option>
-                    </select>
-                </div>
-
-                <div class="flex items-center justify-between">
-                    <button id="startBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Start Server</button>
-                    <button id="stopBtn" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hidden">Stop Server</button>
+            <div>
+                <label for="server-type" class="text-gray-700 text-sm font-bold mb-2">Server Type</label>
+                <div class="flex gap-2 mb-6">
+                    <div>
+                        <select name="server-type" id="server-type" class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                            <option value="WebSocket">WebSocket</option>
+                            <option value="UDP">UDP</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center">
+                        <button id="startBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mr-2">Start Server</button>
+                        <button id="stopBtn" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hidden">Stop Server</button>
+                    </div>
                 </div>
             </div>
-            <div id="status" class="text-md font-semibold text-gray-800"></div>
-            <div id="instrument" class="text-md font-semibold text-gray-800"></div>
+            
+            <div id="status" class="text-md font-semibold text-gray-800 mb-4"></div>
+            
+            <div class="flex justify-around">
+                <div class="text-center">
+                    <div class="text-gray-700 text-sm font-bold mb-2">Left Glove: <span id="left-glove-status" class="disconnected">Disconnected</span></div>
+                    <div id="left-glove-ip" class="text-gray-600 text-sm font-normal mb-2">NO DATA</div>
+                    <div class="flex flex-wrap justify-center">
+                        <div class="flex justify-center  w-48">                    
+                          <div class="shadow w-1/2 rounded border-2 border-gray-400 flex my-1 relative">
+                            <div
+                                 class="border-r-8 h-6 rounded-r absolute flex border-gray-400 ml-24 mt-2 z-10 "></div>
+                                    <div id="battery-level-left"
+                                    class="cursor-default bg-green-400 text-xs font-bold leading-none flex items-center justify-center m-1 py-4 text-center text-white"
+                                    style="width:100%;">
+                                    <span id="battery-percentage-left" class="absolute left-0 mx-8 text-gray-700">NO DATA</span>
+                                 </div>
+                            
+                          </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-center">
+                        <div class="drum" id="glove1-drum1"></div>
+                        <div class="drum" id="glove1-drum2"></div>
+                        <div class="drum" id="glove1-drum3"></div>
+                        <div class="drum" id="glove1-drum4"></div>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <div class="text-gray-700 text-sm font-bold mb-2">Right Glove: <span id="right-glove-status" class="disconnected">Disconnected</span></div>
+                    <!-- ip -->
+                    <div id="right-glove-ip" class="text-gray-600 text-sm font-normal mb-2">NO DATA</div>
+                    <div class="flex flex-wrap justify-center">
+                        <div class="flex justify-center w-48">                    
+                          <div class="shadow w-1/2 rounded border-2 border-gray-400 flex my-1 relative">
+                            <div
+                                 class="border-r-8 h-6 rounded-r absolute flex border-gray-400 ml-24 mt-2 z-10 "></div>
+                                    <div id="battery-level-right"
+                                    class="cursor-default bg-green-400 text-xs font-bold leading-none flex items-center justify-center m-1 py-4 text-center text-white"
+                                    style="width:100%;">
+                                    <span id="battery-percentage-right" class="absolute left-0 mx-8 text-gray-700">NO DATA</span>
+                                 </div>
+                            
+                          </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-center">
+                        <div class="drum" id="glove2-drum1"></div>
+                        <div class="drum" id="glove2-drum2"></div>
+                        <div class="drum" id="glove2-drum3"></div>
+                        <div class="drum" id="glove2-drum4"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-
     <script>
         let serverStatus = false;
-        let serverType = "UDP"
+        let serverType = "WebSocket";
 
         document.getElementById('startBtn').addEventListener('click', async () => {
             console.log("Starting server...");
@@ -80,12 +156,38 @@
             document.getElementById("ip").innerText = ip;
         }
 
+        eel.expose(updateGloveStatus);
+        function updateGloveStatus(glove, ip, port, is_connected) {
+            glove = glove == '0' ? 'left' : 'right';
+            const gloveStatusElement = document.getElementById(`${glove}-glove-status`);
+            gloveStatusElement.innerText = is_connected ? "Connected" : "Disconnected";
+            gloveStatusElement.classList.remove(is_connected ? "disconnected" : "connected");
+            gloveStatusElement.classList.add(is_connected ? "connected" : "disconnected");
+
+            const gloveIpElement = document.getElementById(`${glove}-glove-ip`);
+            if (ip && port) {
+                gloveIpElement.innerText = ip + ":" + port;
+            } else {
+                gloveIpElement.innerText = "NO DATA";
+            }
+
+        }
+
         eel.expose(notifyInstrumentPlayed);
         function notifyInstrumentPlayed(instrument) {
             document.getElementById("instrument").innerText = instrument;
             setTimeout(() => {
                 document.getElementById("instrument").innerText = "";
             }, 500);
+
+            // wont work currently
+            // // if we send like drum1:1
+            // let [drum, glove] = instrument.split(":");
+            // let drumElement = document.getElementById(`glove${glove}-drum${drum}`);
+            // if (drumElement) {
+            //     drumElement.classList.add('playing');
+            //     setTimeout(() => drumElement.classList.remove('playing'), 200);
+            // }
         }
 
         eel.expose(updateServerRunningStatus);
@@ -99,6 +201,27 @@
                 document.getElementById("stopBtn").classList.add("hidden");
             }
         }
+
+        eel.expose(updateBatteryLevel);
+        function updateBatteryLevel(level, glove) {
+            const batteryLevelElement = document.getElementById('battery-level-'+ glove);
+            const batteryPercentageElement = document.getElementById('battery-percentage-'+ glove);
+            batteryLevelElement.style.width = `${level}%`;
+            batteryPercentageElement.innerText = `${level}%`;
+
+            if (level > 50) {
+                batteryLevelElement.classList.remove('bg-yellow-400', 'bg-red-500');
+                batteryLevelElement.classList.add('bg-green-400');
+            } else if (level > 20) {
+                batteryLevelElement.classList.remove('bg-green-400', 'bg-red-500');
+                batteryLevelElement.classList.add('bg-yellow-500');
+            } else {
+                batteryLevelElement.classList.remove('bg-green-400', 'bg-yellow-500');
+                batteryLevelElement.classList.add('bg-red-500');
+            }
+        }
+
+
     </script>
 </body>
 </html>

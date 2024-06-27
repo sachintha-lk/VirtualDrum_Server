@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Drum Player Configuration</title>
-    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
     <link href="dist/output.css" rel="stylesheet">
     <script src="/eel.js"></script>
 </head>
@@ -24,54 +23,72 @@
                 <label for="port" class="block text-gray-700 text-sm font-bold mb-2">Server Port:</label>
                 <input type="number" id="port" value="7075" class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
             </div>
+            <div class="flex gap-2">
+                <div>
+                    <select name="server-type" id="server-type">
+                        <option value="UDP">UDP</option>
+                        <option value="WebSocket">WebSocket</option>
+                    </select>
+                </div>
 
-            <div class="flex items-center justify-between">
-                <button onclick="startServer()" id="startBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Start Server</button>
-                <button onclick="stopServer()" id="stopBtn" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hidden">Stop Server</button>
+                <div class="flex items-center justify-between">
+                    <button id="startBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Start Server</button>
+                    <button id="stopBtn" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hidden">Stop Server</button>
+                </div>
             </div>
             <div id="status" class="text-md font-semibold text-gray-800"></div>
-
             <div id="instrument" class="text-md font-semibold text-gray-800"></div>
-
         </div>
     </div>
 
-
     <script>
         let serverStatus = false;
+        let serverType = "UDP"
 
-        function startServer() {
-            // let ip = document.getElementById("ip").value;
+        document.getElementById('startBtn').addEventListener('click', async () => {
+            console.log("Starting server...");
+            await startServer();
+        });
+
+        document.getElementById('stopBtn').addEventListener('click', async () => {
+            console.log("Stopping server...");
+            await stopServer();
+        });
+
+        async function startServer() {
             let port = parseInt(document.getElementById("port").value);
-            // let allowed_ip = document.getElementById("allowed-ip").value;
-            eel.start_server_eel_command(port);
+            await eel.start_server_eel_command(port)();
         }
 
-        function stopServer() {
-            eel.stop_server_eel_command();
+        async function stopServer() {
+            await eel.stop_server_eel_command()();
         }
 
-        eel.expose(updateMessage)
+        document.getElementById('server-type').addEventListener('change', (e) => {
+            serverType = e.target.value;
+            eel.change_server_type(serverType);
+            console.log("change server type");
+        });
+
+        eel.expose(updateMessage);
         function updateMessage(message) {
             document.getElementById("status").innerText = message;
         }
 
-        eel.expose(updateServerIP) 
+        eel.expose(updateServerIP);
         function updateServerIP(ip) {
             document.getElementById("ip").innerText = ip;
         }
 
-        eel.expose(notifyInstrumentPlayed)
+        eel.expose(notifyInstrumentPlayed);
         function notifyInstrumentPlayed(instrument) {
-            // temporary show and disappear to show the instrument played
             document.getElementById("instrument").innerText = instrument;
             setTimeout(() => {
                 document.getElementById("instrument").innerText = "";
             }, 500);
-
         }
 
-        eel.expose(updateServerRunningStatus)
+        eel.expose(updateServerRunningStatus);
         function updateServerRunningStatus(status) {
             serverStatus = status;
             if (serverStatus) {
@@ -82,7 +99,6 @@
                 document.getElementById("stopBtn").classList.add("hidden");
             }
         }
-        
     </script>
 </body>
 </html>

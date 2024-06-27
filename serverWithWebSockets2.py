@@ -86,23 +86,19 @@ def playDrumSound(data):
 
 async def handle_client(websocket, path):
     print(f"Client connected from {websocket.remote_address}")
-    while True:
-        try:
-            message = await websocket.recv()
-            print(f"Received message from client: {message}")
-            if message.startswith('play'):
-                message = message.replace('play:', '')
-                threading.Thread(target=playDrumSound, args=(message,)).start()
-        except websockets.exceptions.ConnectionClosedError:
-            print(f"Client {websocket.remote_address} disconnected.")
-            break
-        except Exception as e:
-            print(f"Error handling client: {e}")
+    try:
+        async for message in websocket:
+            print(f"Received: {message}")
+            if message.startswith('play:'):
+                msg = message.replace('play:', '')
+                await asyncio.get_event_loop().run_in_executor(None, playDrumSound, msg)
+    except websockets.exceptions.ConnectionClosed:
+        print("Client disconnected at", websocket.remote_addreess)
 
 async def start_server_async(port):
     global server, server_running
     try:
-        server = await websockets.serve(handle_client, HOST, port)
+        server = await websockets.serve(handle_client, HOST, port, reuse_address=True)
         server_running = True
         print(f"Server started on port {port}, waiting for connections...")
         CURRENT_SERVER_LOCAL_IP = get_local_ip()
@@ -112,13 +108,12 @@ async def start_server_async(port):
         
         while server_running:
             try:
-                command = command_queue.get(timeout=1)
+                command = await asyncio.wait_for(command_queue.get(), timeout=1)
                 if command == "stop":
                     await stop_server_async()
-            except asyncio.QueueEmpty:
+            except asyncio.TimeoutError:
                 pass
 
-        await server.wait_closed()
     except Exception as e:
         print(f"Error in server: {e}")
     finally:
@@ -142,6 +137,11 @@ async def stop_server_async():
         if server_running:
             server.close()
             await server.wait_closed()
+            
+            # Close all remaining connections
+            for ws in server.websockets:
+                await ws.close()
+            
             server_running = False
             eel.updateMessage("Server stopped.")
             eel.updateServerRunningStatus(False)
@@ -155,7 +155,7 @@ async def stop_server_async():
 def stop_server_eel_command():
     global server_running
     if server_running:
-        command_queue.put("stop")
+        command_queue.put_nowait("stop")
         if stop_event.wait(timeout=5):  # 5 second timeout
             print("Server stopped successfully")
         else:

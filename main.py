@@ -82,7 +82,7 @@ def updateBatteryLevelFromMessage(message ):
     message = message.replace('bat:', '')
     glove, battery = message.split(':')
     if glove == '0':
-        right_glove_battery = battery
+        left_glove_battery = battery
         updateBatteryLevel(battery, 'left')
     elif glove == '1':
         right_glove_battery = battery

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drum Player Configuration</title>
+    <link href="dist/output.css" rel="stylesheet">
+    <!-- <link rel="stylesheet" href="fonts.css"> -->
+    <link rel="shortcut icon" type="image/x-icon" href="icon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
+
+    <script src="/eel.js"></script>
+    <style>
+        .drum {
+            width: 50px;
+            height: 50px;
+            background-color: #202020;
+            /* border-radius: 50%; */
+            display: inline-block;
+            margin: 10px;
+        }
+
+        .playing {
+            animation: playingAnimation 0.2s;
+        }
+
+        .connected {
+            color: #02d44f;            
+        }
+
+        .disconnected {
+            color: #ff2121;
+        }
+
+        .neonText {
+        color: #fff;
+        text-shadow:
+            0 0 7px #fff,
+            0 0 10px #282828,
+            0 0 21px rgb(0, 221, 255),
+            0 0 42px rgb(0, 221, 255),
+            0 0 82px rgb(0, 221, 255),
+            0 0 92px rgb(0, 221, 255),
+            0 0 102px rgb(0, 221, 255),
+            0 0 151px rgb(0, 221, 255);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .box-glow {
+
+            -webkit-box-shadow:0px 0px 246px 28px rgba(74,23,212,0.65);
+            -moz-box-shadow: 0px 0px 246px 28px rgba(74,23,212,0.65);
+            box-shadow: 0px 0px 246px 28px rgba(74,23,212,0.65);
+
+        }
+
+
+        @keyframes playingAnimation {
+            0% {
+                 background-color: #0d6e2f;
+
+                 }
+            100% {
+                 background-color: #ebebeb;
+
+                 }
+        }
+
+       
+    </style>
+</head>
+<body class="bg-stone-900 flex h-screen">
+    <div class="m-auto">
+        <h1 class="mt-5 neonText text-7xl font-semibold text-center">BeatFusion</h1>
+        <h2 class="neonText text-2xl font-semibold text-center">Virtual Drum Gloves</h2>
+        <h2 class="neonText text-lg font-normal text-center">By IT Group 27</h2>
+    
+    
+        <div class="mt-10 flex justify-center w-fit mx-auto box-glow rounded-lg p-4">
+            <div class="px-8 pt-6 pb-8 mb-4 w-full rounded-lg shadow-md">
+                <div class="block justify-center">
+                <div class="block text-gray-200 text-sm font-bold mb-2">
+                    <span> Server IP: <span id="ip" class="text-gray-300"></span> </span>
+                    
+                </div>
+                <div class="flex gap-7">
+                    <div>
+                        <label for="left-sounds" class="block text-gray-200 text-sm font-bold mb-2">Left Sounds</label>
+                        <select name="left-sounds" id="left-sounds" class="border rounded py-2 px-3 bg-stone-900 text-gray-200 leading-tight focus:outline-none">
+                            <option selected value="set-1">Set 1</option>
+                            <option value="set-2">Set 2</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="right-sounds" class="block text-gray-200 text-sm font-bold mb-2">Right Sounds</label>
+                        <select name="right-sounds" id="right-sounds" class="border rounded py-2 px-3 bg-stone-900 text-gray-200 leading-tight focus:outline-none">
+                            <option value="set-1">Set 1</option>
+                            <option selected value="set-2">Set 2</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-6 w-24">
+                        <label for="port" class="block text-gray-200 text-sm font-bold mb-2">Server Port</label>
+                        <input type="number" id="port" value="7075" class="appearance-none border rounded w-full py-2 px-3 bg-stone-900 text-gray-200 leading-tight focus:outline-none focus:shadow-outline">
+                    </div>
+                    <div>
+                        <label for="server-type" class="text-gray-200 text-sm font-bold mb-6">Server Type</label>
+                        <div class="flex gap-2 my-1">
+                            <div>
+                                <select name="server-type" id="server-type" class="appearance-none  bg-stone-900 border rounded w-full py-2 px-3 text-gray-200 leading-tight focus:outline-none focus:shadow-outline">
+                                    <option value="WebSocket">WebSocket</option>
+                                    <option value="UDP">UDP</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center">
+                                <button id="startBtn" class="bg-indigo-700 hover:bg-indigo-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mr-2">Start Server</button>
+                                <button id="stopBtn" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hidden">Stop Server</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+                
+                <div id="status" class="text-md font-semibold text-gray-200 mb-4">Server Stopped</div>
+                
+                <div class="flex justify-center gap-10">
+                    <div class="text-center">
+                        <div class="text-gray-200 text-sm font-bold mb-2">Left Glove: <span id="left-glove-status" class="disconnected">Disconnected</span></div>
+                        <div id="left-glove-ip" class="text-gray-300 text-sm font-normal mb-2">NO DATA</div>
+                        <div class="flex flex-wrap justify-center">
+                            <div class="flex justify-center  w-48">                    
+                            <div class="shadow w-1/2 rounded border-2 border-gray-200 flex my-1 relative">
+                                <div
+                                    class="border-r-8 h-6 rounded-r absolute flex border-gray-200 ml-24 mt-2 z-10 "></div>
+                                        <div id="battery-level-left"
+                                        class="cursor-default bg-gradient-to-r from-green-800 to-green-950 text-xs font-bold leading-none flex items-center justify-center m-1 py-4 text-center text-white"
+                                        style="width:100%;">
+                                        <span id="battery-percentage-left" class="absolute left-0 mx-8 text-gray-200">NO DATA</span>
+                                    </div>
+                                
+                            </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-center">
+                            <div class="drum" id="drum7-visual"></div>
+                            <div class="drum" id="drum5-visual"></div>
+                            <div class="drum" id="drum8-visual"></div>
+                            <div class="drum" id="drum6-visual"></div>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-gray-200 text-sm font-bold mb-2">Right Glove: <span id="right-glove-status" class="disconnected">Disconnected</span></div>
+                        <!-- ip -->
+                        <div id="right-glove-ip" class="text-gray-200 text-sm font-normal mb-2">NO DATA</div>
+                        <div class="flex flex-wrap justify-center">
+                            <div class="flex justify-center w-48">                    
+                            <div class="shadow w-1/2 rounded border-2 border-gray-200 flex my-1 relative">
+                                <div
+                                    class="border-r-8 h-6 rounded-r absolute flex border-gray-200 ml-24 mt-2 z-10 "></div>
+                                        <div id="battery-level-right"
+                                        class="cursor-default bg-gradient-to-r from-green-800 to-green-950 text-xs font-bold leading-none flex items-center justify-center m-1 py-4 text-center text-white"
+                                        style="width:100%;">
+                                        <span id="battery-percentage-right" class="absolute left-0 mx-8 text-gray-200">NO DATA</span>
+                                    </div>
+                                
+                            </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-center">
+                            <div class="drum" id="drum3-visual"></div>
+                            <div class="drum" id="drum1-visual"></div>
+                            <div class="drum" id="drum2-visual"></div>
+                            <div class="drum" id="drum4-visual"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+   
+    <script>
+        let serverStatus = false;
+        let serverType = "WebSocket";
+
+        document.getElementById('startBtn').addEventListener('click', async () => {
+            console.log("Starting server...");
+            await startServer();
+        });
+
+        document.getElementById('stopBtn').addEventListener('click', async () => {
+            console.log("Stopping server...");
+            await stopServer();
+        });
+
+        async function startServer() {
+            let port = parseInt(document.getElementById("port").value);
+            await eel.start_server_eel_command(port)();
+        }
+
+        async function stopServer() {
+            await eel.stop_server_eel_command()();
+        }
+
+        document.getElementById('server-type').addEventListener('change', (e) => {
+            serverType = e.target.value;
+            eel.change_server_type(serverType);
+            console.log("change server type");
+        });
+
+        document.getElementById('left-sounds').addEventListener('change', (e) => {
+            let sound_set = e.target.value;          
+            eel.select_left_sound_set_eel_command(sound_set);
+        });
+
+        document.getElementById('right-sounds').addEventListener('change', (e) => {
+            let sound_set = e.target.value;
+            eel.select_right_sound_set_eel_command(sound_set);
+        });
+
+        eel.expose(updateMessage);
+        function updateMessage(message) {
+            document.getElementById("status").innerText = message;
+        }
+
+        eel.expose(updateServerIP);
+        function updateServerIP(ip) {
+            document.getElementById("ip").innerText = ip;
+        }
+
+        eel.expose(updateGloveStatus);
+        function updateGloveStatus(glove, ip, port, is_connected) {
+            glove = glove == '0' ? 'left' : 'right';
+            const gloveStatusElement = document.getElementById(`${glove}-glove-status`);
+            gloveStatusElement.innerText = is_connected ? "Connected" : "Disconnected";
+            gloveStatusElement.classList.remove(is_connected ? "disconnected" : "connected");
+            gloveStatusElement.classList.add(is_connected ? "connected" : "disconnected");
+
+            const gloveIpElement = document.getElementById(`${glove}-glove-ip`);
+            if (ip && port) {
+                gloveIpElement.innerText = ip + ":" + port;
+            } else {
+                gloveIpElement.innerText = "NO DATA";
+            }
+
+        }
+
+        eel.expose(notifyInstrumentPlayed);
+        function notifyInstrumentPlayed(instrument) {       
+            // if we send like drum1:10000
+            let [drum, _] = instrument.split(":");
+            let drumElement = document.getElementById(`${drum}-visual`);
+            if (drumElement) {
+                drumElement.classList.add('playing');
+                setTimeout(() => drumElement.classList.remove('playing'), 500);
+            }
+        }
+
+        eel.expose(updateServerRunningStatus);
+        function updateServerRunningStatus(status) {
+            serverStatus = status;
+            if (serverStatus) {
+                document.getElementById("startBtn").classList.add("hidden");
+                document.getElementById("stopBtn").classList.remove("hidden");
+            } else {
+                document.getElementById("startBtn").classList.remove("hidden");
+                document.getElementById("stopBtn").classList.add("hidden");
+            }
+        }
+
+        eel.expose(updateBatteryLevel);
+        function updateBatteryLevel(level, glove) {
+            const batteryLevelElement = document.getElementById('battery-level-'+ glove);
+            const batteryPercentageElement = document.getElementById('battery-percentage-'+ glove);
+            batteryLevelElement.style.width = `${level}%`;
+            batteryPercentageElement.innerText = `${level}%`;
+
+            if (level > 50) {
+                batteryLevelElement.classList.remove('bg-yellow-400', 'bg-red-500');
+                batteryLevelElement.classList.add('bg-green-400');
+            } else if (level > 20) {
+                batteryLevelElement.classList.remove('bg-green-400', 'bg-red-500');
+                batteryLevelElement.classList.add('bg-yellow-500');
+            } else {
+                batteryLevelElement.classList.remove('bg-green-400', 'bg-yellow-500');
+                batteryLevelElement.classList.add('bg-red-500');
+            }
+        }
+
+
+
+    </script>
+</body>
+</html>

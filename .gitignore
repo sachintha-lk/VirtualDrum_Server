@@ -2,3 +2,5 @@
 *.csv
 *.log
 *.zip
+__pycache__/
+build
